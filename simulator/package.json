@@ -1,0 +1,11 @@
+{
+  "name": "drone-soccer-simulator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "足球無人機 Web 模擬器",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "start": "python3 -m http.server 8000"
+  }
+}
