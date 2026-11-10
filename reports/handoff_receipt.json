@@ -1,0 +1,19 @@
+{
+  "repository": "cmlo/mango_drone",
+  "visibility": "private",
+  "branch": "codex/mango-drone-reva-hardware-20261017",
+  "design_input_commit": "755357eba617a5d31312cc27f329e5bf34190558",
+  "pull_request": 1,
+  "pull_request_url": "https://github.com/cmlo/mango_drone/pull/1",
+  "trigger_comment_id": 6221668272,
+  "trigger_url": "https://github.com/cmlo/mango_drone/pull/1#issuecomment-6221668272",
+  "bot_comment_id": 6221672444,
+  "bot_login": "chatgpt-codex-connector[bot]",
+  "bot_response": "To use Codex here, create an environment for this repo.",
+  "environment_settings_url": "https://chatgpt.com/codex/cloud/settings/environments",
+  "handoff_status": "SENT_AND_BOT_RESPONDED_ENVIRONMENT_REQUIRED",
+  "codex_execution_started": false,
+  "native_kicad_files_generated": false,
+  "physical_tests": "NOT_TESTED",
+  "next_action": "Create a Codex cloud environment for cmlo/mango_drone, then re-trigger the existing PR implementation request."
+}
