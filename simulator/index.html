@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>足球無人機模擬器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!--APP-START-->
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<div id="app">
+  <canvas id="scene" aria-label="3D 場地畫面"></canvas>
+
+  <div class="scoreboard" aria-live="polite">
+    <div class="team red">
+      <div><div class="name">紅隊 RED</div><div class="sets" id="setsRed"></div></div>
+      <div class="goals" id="goalsRed">0</div>
+    </div>
+    <div class="clock">
+      <div class="time" id="clock">3:00</div>
+      <div class="set" id="setLabel">第 1 局</div>
+    </div>
+    <div class="team blue">
+      <div><div class="name">藍隊 BLUE</div><div class="sets" id="setsBlue"></div></div>
+      <div class="goals" id="goalsBlue">0</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button id="btnPause" type="button" title="暫停 / 選單">Ⅱ <span class="text">選單</span> <kbd>Esc</kbd></button>
+    <button id="btnCam" type="button" title="切換視角">◉ <span class="text" id="camLabel">跟隨視角</span> <kbd>C</kbd></button>
+    <button id="btnSwitch" type="button" title="切換操控的無人機">⇄ <span class="text">換機</span> <kbd>Tab</kbd></button>
+    <button id="btnSound" type="button" title="音效開關">♪ <span class="text" id="soundLabel">音效 開</span> <kbd>M</kbd></button>
+  </div>
+
+  <canvas id="minimap" width="360" height="180" aria-label="小地圖"></canvas>
+
+  <dl class="telemetry" id="telemetry">
+    <dt>操控</dt><dd id="tRole">攻擊手</dd>
+    <dt>高度</dt><dd id="tAlt">0.0 m</dd>
+    <dt>速度</dt><dd id="tSpd">0.0 m/s</dd>
+    <dt>狀態</dt><dd id="tState" class="ready">可得分</dd>
+    <div class="throttle-bar"><span id="tThr"></span></div>
+  </dl>
+
+  <div class="banner" id="banner" style="opacity:0"><div class="big" id="bannerBig"></div><div class="small" id="bannerSmall"></div></div>
+  <div class="toast" id="toast" style="opacity:0"></div>
+
+  <div class="stick left" id="stickL" hidden><div class="label" id="stickLLabel">油門 / 偏航</div><div class="knob"></div></div>
+  <div class="stick right" id="stickR" hidden><div class="label" id="stickRLabel">俯仰 / 橫滾</div><div class="knob"></div></div>
+
+  <!-- 主選單 -->
+  <div class="overlay" id="menu">
+    <div class="card">
+      <header>
+        <div class="eyebrow">Drone Soccer Simulator</div>
+        <h1>足球無人機模擬器</h1>
+        <p>球型保護籠無人機在網籠內對戰。每隊只有一架<b style="color:var(--gold)">攻擊手（金色雙環）</b>能得分：從正面穿過對方球門環即得 1 分，得分後須飛回己方半場才能再得分。其他隊員負責攔截、衝撞與護航。</p>
+      </header>
+
+      <section>
+        <h2>模式</h2>
+        <div class="modes">
+          <button class="mode" type="button" data-mode="match" aria-pressed="true"><strong>對戰 AI</strong><span>完整比賽：多局制、限時，與 AI 隊友合作對抗 AI 敵隊。</span></button>
+          <button class="mode" type="button" data-mode="practice" aria-pressed="false"><strong>自由練習</strong><span>不計時，練習起飛、對準與穿門；可加入一架 AI 守門員。</span></button>
+        </div>
+      </section>
+
+      <section>
+        <h2>設定</h2>
+        <div class="settings">
+          <label>機種 / 場地
+            <select id="optField"><option value="DS40">DS40（40 cm，20×10×5 m）</option><option value="DS20">DS20（20 cm，16×8×4 m）</option></select>
+          </label>
+          <label>球門大小
+            <select id="optGoal"><option value="1">標準</option><option value="1.5">放大 1.5 倍（新手）</option><option value="2">放大 2 倍</option></select>
+          </label>
+          <label>飛行模式
+            <select id="optFlight"><option value="althold">定高輔助（推薦新手）</option><option value="manual">自穩 + 手動油門</option></select>
+          </label>
+          <label>遙控器模式
+            <select id="optRadio"><option value="2">Mode 2（美國手：左油門）</option><option value="1">Mode 1（日本手：右油門）</option></select>
+          </label>
+          <label class="match-only">每隊機數
+            <select id="optTeam"><option value="5">5 架</option><option value="3">3 架</option></select>
+          </label>
+          <label class="match-only">我方操控
+            <select id="optRole"><option value="striker">攻擊手</option><option value="keeper">守門</option><option value="chaser">攔截</option></select>
+          </label>
+          <label class="match-only">AI 難度
+            <select id="optSkill"><option value="easy">簡單</option><option value="normal" selected>普通</option><option value="hard">困難</option></select>
+          </label>
+          <label class="match-only">每局時間
+            <select id="optTime"><option value="60">1 分鐘</option><option value="120">2 分鐘</option><option value="180" selected>3 分鐘</option></select>
+          </label>
+          <label class="match-only">局數
+            <select id="optSets"><option value="1">1 局</option><option value="3" selected>3 局（三局兩勝）</option></select>
+          </label>
+          <label class="practice-only" hidden>練習對手
+            <select id="optOpp"><option value="none">無</option><option value="keeper">AI 守門員</option></select>
+          </label>
+          <label>觸控搖桿
+            <select id="optTouch"><option value="auto">自動偵測</option><option value="on">顯示</option><option value="off">隱藏</option></select>
+          </label>
+        </div>
+      </section>
+
+      <section class="help">
+        <div>
+          <h3>鍵盤</h3>
+          <ul>
+            <li><kbd>W</kbd>/<kbd>S</kbd> 油門（定高模式為升降）</li>
+            <li><kbd>A</kbd>/<kbd>D</kbd> 偏航（左右旋轉）</li>
+            <li><kbd>↑</kbd><kbd>↓</kbd> 或 <kbd>I</kbd><kbd>K</kbd> 前後；<kbd>←</kbd><kbd>→</kbd> 或 <kbd>J</kbd><kbd>L</kbd> 左右平移</li>
+            <li>按住 <kbd>Shift</kbd> 精細操作</li>
+            <li><kbd>C</kbd> 視角、<kbd>Tab</kbd> 換機、<kbd>R</kbd> 重置（練習）、<kbd>Esc</kbd> 暫停</li>
+          </ul>
+        </div>
+        <div>
+          <h3>手把 / 遙控器</h3>
+          <ul>
+            <li>Mode 2：左桿 油門＋偏航、右桿 俯仰＋橫滾</li>
+            <li>Mode 1：左桿 俯仰＋偏航、右桿 油門＋橫滾</li>
+            <li>Y 視角、X 換機、B 重置、Start 暫停</li>
+            <li>USB 模擬器遙控器通常會被當成手把</li>
+          </ul>
+        </div>
+        <div>
+          <h3>觸控</h3>
+          <ul>
+            <li>畫面下方左右兩個虛擬搖桿</li>
+            <li>建議使用「定高輔助」：放開油門即維持高度</li>
+            <li>橫向持握手機較好操作</li>
+          </ul>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button class="primary" id="btnStart" type="button">開始</button>
+        <button class="secondary" id="btnResume" type="button" hidden>繼續</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 比賽結果 -->
+  <div class="overlay" id="result" hidden>
+    <div class="card">
+      <div>
+        <div class="eyebrow">Match Result</div>
+        <h1 id="resultTitle">比賽結束</h1>
+      </div>
+      <table class="result-table">
+        <thead><tr><th>局</th><th style="color:var(--red)">紅隊</th><th style="color:var(--blue)">藍隊</th></tr></thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+      <div class="actions">
+        <button class="primary" id="btnAgain" type="button">再來一場</button>
+        <button class="secondary" id="btnMenu" type="button">回選單</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="src/main.js"></script>
+<!--APP-END-->
+</body>
+</html>
