@@ -32,7 +32,15 @@ python3 -m http.server 8000
 # 開啟 http://localhost:8000
 ```
 
-three.js 會從 jsDelivr CDN 載入，所以需要網路連線。也可以直接把 `simulator/` 部署到 GitHub Pages 或任何靜態網站主機。
+three.js 會從 jsDelivr CDN 載入，所以需要網路連線。
+
+### 部署到 GitHub Pages
+
+`.github/workflows/pages.yml` 會在 `simulator/` 有變更並推送到 `main` 時，先跑測試，再自動部署。也可以在 Actions 頁面手動執行。
+
+首次使用前需要啟用一次：Repo → **Settings → Pages → Build and deployment → Source** 選 **GitHub Actions**。
+
+部署後網址為 `https://<帳號>.github.io/mango_drone/`。
 
 ### 操作
 
